@@ -2,6 +2,7 @@
 File handling service for CSV uploads.
 """
 
+import json
 import uuid
 import aiofiles
 from pathlib import Path
@@ -11,6 +12,9 @@ import pandas as pd
 import structlog
 
 from ..config import settings
+
+METADATA_FILE = "files_metadata.json"
+
 from ..middleware.error_handler import FileUploadError, NotFoundError
 from ..models.schemas import ColumnInfo, DataPreview
 
@@ -30,6 +34,30 @@ class FileService:
         self.upload_dir = settings.upload_path
         self.max_size = settings.max_upload_size_bytes
         self.allowed_extensions = settings.allowed_extensions
+        self._load_metadata()
+
+    def _get_metadata_path(self) -> Path:
+        """Get the path to the metadata file."""
+        return settings.metadata_path / METADATA_FILE
+
+    def _save_metadata(self) -> None:
+        """Save uploaded files metadata to JSON file."""
+        metadata_path = self._get_metadata_path()
+        with open(metadata_path, "w") as f:
+            json.dump(self._uploaded_files, f, indent=2)
+        logger.debug("Metadata saved", path=str(metadata_path))
+
+    def _load_metadata(self) -> None:
+        """Load uploaded files metadata from JSON file."""
+        metadata_path = self._get_metadata_path()
+        if metadata_path.exists():
+            try:
+                with open(metadata_path, "r") as f:
+                    FileService._uploaded_files = json.load(f)
+                logger.info("Metadata loaded", count=len(self._uploaded_files))
+            except (json.JSONDecodeError, IOError) as e:
+                logger.warning("Failed to load metadata", error=str(e))
+                FileService._uploaded_files = {}
 
     async def save_upload(
         self,
@@ -183,6 +211,7 @@ class FileService:
             "rows": len(df),
             "columns": list(df.columns),
         }
+        self._save_metadata()
         logger.info("DataFrame stored", file_id=file_id)
 
     def get_dataframe(self, file_id: str) -> pd.DataFrame:
@@ -246,6 +275,7 @@ class FileService:
             del self._dataframes[file_id]
         if file_id in self._uploaded_files:
             del self._uploaded_files[file_id]
+            self._save_metadata()
 
         # Delete physical file if exists
         for ext in self.allowed_extensions:

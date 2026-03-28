@@ -2,16 +2,19 @@
 Machine Learning service for model training and prediction.
 
 Integrates the enhanced CampaignRegressionModel from the ml module.
+Includes persistence for models and training results.
 """
 
 import sys
 import uuid
+import json
 from pathlib import Path
 from typing import Any
 from datetime import datetime
 
 import pandas as pd
 import numpy as np
+import joblib
 import structlog
 
 # Add ML module to path
@@ -21,6 +24,7 @@ sys.path.insert(0, str(ML_MODULE_PATH.parent))
 from ml.model import CampaignRegressionModel
 from ml.preprocessing import CampaignDataPreprocessor
 
+from ..config import settings
 from ..middleware.error_handler import ModelError, NotFoundError
 from ..models.schemas import TrainingResult, TrainingConfig
 
@@ -34,11 +38,17 @@ class MLService:
     DEFAULT_NUMERIC_FEATURES = ["budget", "impressions", "clicks", "ctr", "cpc"]
     DEFAULT_CATEGORICAL_FEATURES = ["audience_type", "creative_type", "channel"]
 
+    # Persistence file names
+    MODEL_FILE = "current_model.joblib"
+    RESULTS_FILE = "training_results.json"
+    STATE_FILE = "ml_state.json"
+
     def __init__(self) -> None:
-        """Initialize ML service."""
+        """Initialize ML service and load persisted state."""
         self._model: CampaignRegressionModel | None = None
         self._training_results: dict[str, TrainingResult] = {}
         self._latest_training_id: str | None = None
+        self._load_persisted_state()
 
     def train_model(
         self,
@@ -132,6 +142,9 @@ class MLService:
             # Store results
             self._training_results[training_id] = result
             self._latest_training_id = training_id
+
+            # Persist to disk
+            self._persist_all()
 
             logger.info(
                 "Model training completed",
@@ -293,6 +306,136 @@ class MLService:
         if self._model is None or not self._model.is_fitted:
             raise NotFoundError("No trained model available.")
         return self._model.get_vif_report()
+
+    # -------------------------------------------------------------------------
+    # Persistence Methods
+    # -------------------------------------------------------------------------
+
+    def _get_model_path(self) -> Path:
+        """Get path to model file."""
+        return settings.models_path / self.MODEL_FILE
+
+    def _get_results_path(self) -> Path:
+        """Get path to results file."""
+        return settings.metadata_path / self.RESULTS_FILE
+
+    def _get_state_path(self) -> Path:
+        """Get path to state file."""
+        return settings.metadata_path / self.STATE_FILE
+
+    def _save_model(self) -> None:
+        """Save current model to disk."""
+        if self._model is not None and self._model.is_fitted:
+            model_path = self._get_model_path()
+            joblib.dump(self._model, model_path)
+            logger.info("Model saved to disk", path=str(model_path))
+
+    def _load_model(self) -> bool:
+        """Load model from disk if exists."""
+        model_path = self._get_model_path()
+        if model_path.exists():
+            try:
+                self._model = joblib.load(model_path)
+                logger.info("Model loaded from disk", path=str(model_path))
+                return True
+            except Exception as e:
+                logger.warning("Failed to load model", error=str(e))
+        return False
+
+    def _save_results(self) -> None:
+        """Save training results to disk."""
+        results_path = self._get_results_path()
+        results_data = {}
+        for tid, result in self._training_results.items():
+            results_data[tid] = {
+                "training_id": result.training_id,
+                "trained_at": result.trained_at.isoformat(),
+                "model_type": result.model_type,
+                "target_column": result.target_column,
+                "n_samples": result.n_samples,
+                "n_features": result.n_features,
+                "train_r2": result.train_r2,
+                "test_r2": result.test_r2,
+                "train_rmse": result.train_rmse,
+                "test_rmse": result.test_rmse,
+                "train_mae": result.train_mae,
+                "test_mae": result.test_mae,
+                "cv_r2_mean": result.cv_r2_mean,
+                "cv_r2_std": result.cv_r2_std,
+                "intercept": result.intercept,
+                "coefficients": result.coefficients,
+                "feature_importance": result.feature_importance,
+                "feature_names": result.feature_names,
+            }
+        with open(results_path, "w") as f:
+            json.dump(results_data, f, indent=2)
+        logger.info("Training results saved", count=len(results_data))
+
+    def _load_results(self) -> bool:
+        """Load training results from disk if exists."""
+        results_path = self._get_results_path()
+        if results_path.exists():
+            try:
+                with open(results_path, "r") as f:
+                    results_data = json.load(f)
+                for tid, data in results_data.items():
+                    self._training_results[tid] = TrainingResult(
+                        training_id=data["training_id"],
+                        trained_at=datetime.fromisoformat(data["trained_at"]),
+                        model_type=data["model_type"],
+                        target_column=data["target_column"],
+                        n_samples=data["n_samples"],
+                        n_features=data["n_features"],
+                        train_r2=data["train_r2"],
+                        test_r2=data["test_r2"],
+                        train_rmse=data["train_rmse"],
+                        test_rmse=data["test_rmse"],
+                        train_mae=data["train_mae"],
+                        test_mae=data["test_mae"],
+                        cv_r2_mean=data["cv_r2_mean"],
+                        cv_r2_std=data["cv_r2_std"],
+                        intercept=data["intercept"],
+                        coefficients=data["coefficients"],
+                        feature_importance=data["feature_importance"],
+                        feature_names=data["feature_names"],
+                    )
+                logger.info("Training results loaded", count=len(results_data))
+                return True
+            except Exception as e:
+                logger.warning("Failed to load results", error=str(e))
+        return False
+
+    def _save_state(self) -> None:
+        """Save service state (latest training ID)."""
+        state_path = self._get_state_path()
+        state = {"latest_training_id": self._latest_training_id}
+        with open(state_path, "w") as f:
+            json.dump(state, f)
+
+    def _load_state(self) -> bool:
+        """Load service state from disk."""
+        state_path = self._get_state_path()
+        if state_path.exists():
+            try:
+                with open(state_path, "r") as f:
+                    state = json.load(f)
+                self._latest_training_id = state.get("latest_training_id")
+                return True
+            except Exception as e:
+                logger.warning("Failed to load state", error=str(e))
+        return False
+
+    def _load_persisted_state(self) -> None:
+        """Load all persisted state on initialization."""
+        self._load_model()
+        self._load_results()
+        self._load_state()
+
+    def _persist_all(self) -> None:
+        """Save all state to disk."""
+        self._save_model()
+        self._save_results()
+        self._save_state()
 
 
 # Singleton instance

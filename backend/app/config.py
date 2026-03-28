@@ -43,7 +43,12 @@ class Settings(BaseSettings):
     # File upload
     max_upload_size_mb: int = Field(default=10)
     allowed_extensions: list[str] = Field(default=[".csv"])
-    upload_dir: str = Field(default="uploads")
+    upload_dir: str = Field(default="storage/uploads")
+
+    # Persistence
+    storage_dir: str = Field(default="storage")
+    models_dir: str = Field(default="storage/models")
+    metadata_dir: str = Field(default="storage/metadata")
 
     # ML Model
     default_model_type: str = Field(default="ols")
@@ -63,6 +68,20 @@ class Settings(BaseSettings):
     def upload_path(self) -> Path:
         """Get upload directory path."""
         path = Path(self.upload_dir)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def models_path(self) -> Path:
+        """Get models directory path."""
+        path = Path(self.models_dir)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def metadata_path(self) -> Path:
+        """Get metadata directory path."""
+        path = Path(self.metadata_dir)
         path.mkdir(parents=True, exist_ok=True)
         return path
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useReducer, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode } from "react";
 import {
   UploadResponse,
   ModelStatus,
@@ -74,8 +74,22 @@ interface AppContextType extends AppState {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+function getInitialTheme(): "light" | "dark" {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+  const stored = localStorage.getItem("theme");
+  if (stored === "light" || stored === "dark") {
+    return stored;
+  }
+  return "light";
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+  const [state, dispatch] = useReducer(appReducer, initialState, (initial) => ({
+    ...initial,
+    theme: getInitialTheme(),
+  }));
 
   const setUploadedData = useCallback((data: UploadResponse | null) => {
     dispatch({ type: "SET_UPLOADED_DATA", payload: data });
@@ -100,6 +114,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleTheme = useCallback(() => {
     dispatch({ type: "TOGGLE_THEME" });
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("theme", state.theme);
+    }
+  }, [state.theme]);
 
   const resetState = useCallback(() => {
     dispatch({ type: "RESET_STATE" });
