@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Campaign analytics data schema for multivariate linear regression",
+  "columns": {
+    "campaign_id": {
+      "type": "string",
+      "description": "Unique identifier for the campaign",
+      "required": true,
+      "constraints": {
+        "pattern": "^C[0-9]{3,}$",
+        "unique": true
+      }
+    },
+    "budget": {
+      "type": "float",
+      "description": "Campaign budget in dollars",
+      "required": true,
+      "constraints": {
+        "min_value": 0,
+        "max_value": 1000000
+      }
+    },
+    "audience_type": {
+      "type": "categorical",
+      "description": "Target audience segmentation type",
+      "required": true,
+      "constraints": {
+        "allowed_values": ["lookalike", "interest", "retargeting", "broad"]
+      }
+    },
+    "creative_type": {
+      "type": "categorical",
+      "description": "Type of creative asset used",
+      "required": true,
+      "constraints": {
+        "allowed_values": ["video", "image", "carousel"]
+      }
+    },
+    "channel": {
+      "type": "categorical",
+      "description": "Marketing channel platform",
+      "required": true,
+      "constraints": {
+        "allowed_values": ["facebook", "instagram", "tiktok", "google", "youtube"]
+      }
+    },
+    "impressions": {
+      "type": "integer",
+      "description": "Total number of ad impressions",
+      "required": true,
+      "constraints": {
+        "min_value": 0
+      }
+    },
+    "clicks": {
+      "type": "integer",
+      "description": "Total number of ad clicks",
+      "required": true,
+      "constraints": {
+        "min_value": 0
+      }
+    },
+    "ctr": {
+      "type": "float",
+      "description": "Click-through rate (clicks/impressions * 100)",
+      "required": true,
+      "constraints": {
+        "min_value": 0,
+        "max_value": 100
+      }
+    },
+    "cpc": {
+      "type": "float",
+      "description": "Cost per click in dollars",
+      "required": true,
+      "constraints": {
+        "min_value": 0
+      }
+    },
+    "conversions": {
+      "type": "integer",
+      "description": "Total number of conversions",
+      "required": true,
+      "constraints": {
+        "min_value": 0
+      }
+    },
+    "cpl": {
+      "type": "float",
+      "description": "Cost per lead/conversion in dollars",
+      "required": true,
+      "constraints": {
+        "min_value": 0
+      }
+    },
+    "revenue": {
+      "type": "float",
+      "description": "Total revenue generated in dollars",
+      "required": true,
+      "constraints": {
+        "min_value": 0
+      }
+    },
+    "roas": {
+      "type": "float",
+      "description": "Return on ad spend (revenue/budget)",
+      "required": true,
+      "constraints": {
+        "min_value": 0
+      }
+    }
+  },
+  "derived_features": {
+    "cost_per_impression": {
+      "formula": "budget / impressions",
+      "description": "Cost per single impression"
+    },
+    "conversion_rate": {
+      "formula": "conversions / clicks",
+      "description": "Percentage of clicks that convert"
+    },
+    "efficiency_score": {
+      "formula": "conversions / budget * 1000",
+      "description": "Conversions per $1000 spent"
+    },
+    "engagement_rate": {
+      "formula": "clicks / impressions",
+      "description": "Click-through rate as decimal"
+    },
+    "revenue_per_conversion": {
+      "formula": "revenue / conversions",
+      "description": "Average revenue per conversion"
+    }
+  },
+  "data_quality_thresholds": {
+    "missing_value_threshold": 0.05,
+    "outlier_zscore_threshold": 3.0,
+    "minimum_records": 10,
+    "correlation_threshold": 0.95
+  },
+  "metadata": {
+    "created_date": "2024-01-01",
+    "last_updated": "2024-01-01",
+    "maintainer": "data-engineering-team"
+  }
+}
