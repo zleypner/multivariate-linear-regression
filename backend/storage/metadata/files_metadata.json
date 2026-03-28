@@ -1,0 +1,21 @@
+{
+  "a064da65-cb3d-4d74-befb-8741cf81d6f8": {
+    "filename": "sample_campaigns.csv",
+    "rows": 50,
+    "columns": [
+      "campaign_id",
+      "budget",
+      "audience_type",
+      "creative_type",
+      "channel",
+      "impressions",
+      "clicks",
+      "ctr",
+      "cpc",
+      "conversions",
+      "cpl",
+      "revenue",
+      "roas"
+    ]
+  }
+}
