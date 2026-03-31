@@ -48,16 +48,57 @@ class FileService:
         logger.debug("Metadata saved", path=str(metadata_path))
 
     def _load_metadata(self) -> None:
-        """Load uploaded files metadata from JSON file."""
+        """Load uploaded files metadata from JSON file and reload DataFrames."""
         metadata_path = self._get_metadata_path()
         if metadata_path.exists():
             try:
                 with open(metadata_path, "r") as f:
                     FileService._uploaded_files = json.load(f)
                 logger.info("Metadata loaded", count=len(self._uploaded_files))
+
+                # Reload DataFrames from persisted CSV files
+                self._reload_dataframes()
             except (json.JSONDecodeError, IOError) as e:
                 logger.warning("Failed to load metadata", error=str(e))
                 FileService._uploaded_files = {}
+
+    def _reload_dataframes(self) -> None:
+        """Reload DataFrames from persisted CSV files."""
+        loaded_count = 0
+        failed_ids = []
+
+        for file_id in list(FileService._uploaded_files.keys()):
+            csv_path = self.upload_dir / f"{file_id}.csv"
+            if csv_path.exists():
+                try:
+                    FileService._dataframes[file_id] = pd.read_csv(csv_path)
+                    loaded_count += 1
+                    logger.debug("DataFrame reloaded", file_id=file_id)
+                except Exception as e:
+                    logger.warning(
+                        "Failed to reload DataFrame",
+                        file_id=file_id,
+                        error=str(e)
+                    )
+                    failed_ids.append(file_id)
+            else:
+                # CSV file missing, remove from metadata
+                logger.warning("CSV file missing, removing from metadata", file_id=file_id)
+                failed_ids.append(file_id)
+
+        # Clean up metadata for files that couldn't be loaded
+        for file_id in failed_ids:
+            if file_id in FileService._uploaded_files:
+                del FileService._uploaded_files[file_id]
+
+        if failed_ids:
+            self._save_metadata()
+
+        logger.info(
+            "DataFrames reloaded",
+            loaded=loaded_count,
+            failed=len(failed_ids)
+        )
 
     async def save_upload(
         self,

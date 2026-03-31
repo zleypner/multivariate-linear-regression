@@ -354,9 +354,17 @@ class DataQualityChecker:
 
         # Check CTR consistency
         if all(col in df.columns for col in ['clicks', 'impressions', 'ctr']):
-            calculated_ctr = df['clicks'] / df['impressions'] * 100
+            # Protect against division by zero
+            calculated_ctr = np.where(
+                df['impressions'] > 0,
+                df['clicks'] / df['impressions'] * 100,
+                0.0
+            )
             tolerance = 0.5  # Allow 0.5% tolerance
-            inconsistent = abs(calculated_ctr - df['ctr']) > tolerance
+            # Only check where impressions > 0
+            valid_mask = df['impressions'] > 0
+            inconsistent = np.zeros(len(df), dtype=bool)
+            inconsistent[valid_mask] = abs(calculated_ctr[valid_mask] - df.loc[valid_mask, 'ctr']) > tolerance
             violations = inconsistent.sum()
 
             report.add_check(QualityCheckResult(
@@ -371,9 +379,17 @@ class DataQualityChecker:
 
         # Check ROAS consistency
         if all(col in df.columns for col in ['revenue', 'budget', 'roas']):
-            calculated_roas = df['revenue'] / df['budget']
+            # Protect against division by zero
+            calculated_roas = np.where(
+                df['budget'] > 0,
+                df['revenue'] / df['budget'],
+                0.0
+            )
             tolerance = 0.05  # Allow 5% tolerance
-            inconsistent = abs(calculated_roas - df['roas']) > tolerance
+            # Only check where budget > 0
+            valid_mask = df['budget'] > 0
+            inconsistent = np.zeros(len(df), dtype=bool)
+            inconsistent[valid_mask] = abs(calculated_roas[valid_mask] - df.loc[valid_mask, 'roas']) > tolerance
             violations = inconsistent.sum()
 
             report.add_check(QualityCheckResult(

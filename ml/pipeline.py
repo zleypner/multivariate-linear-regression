@@ -429,9 +429,16 @@ class DataValidator:
 
         # Validate derived metrics consistency
         if all(col in df.columns for col in ['clicks', 'impressions', 'ctr']):
-            calculated_ctr = (df['clicks'] / df['impressions'] * 100).round(1)
+            # Protect against division by zero
+            calculated_ctr = np.where(
+                df['impressions'] > 0,
+                (df['clicks'] / df['impressions'] * 100).round(1),
+                0.0
+            )
             actual_ctr = df['ctr'].round(1)
-            mismatches = (calculated_ctr != actual_ctr).sum()
+            # Only compare where impressions > 0
+            valid_mask = df['impressions'] > 0
+            mismatches = (calculated_ctr[valid_mask] != actual_ctr[valid_mask]).sum()
             if mismatches > 0:
                 result.add_warning(
                     f"CTR inconsistency detected in {mismatches} records"
