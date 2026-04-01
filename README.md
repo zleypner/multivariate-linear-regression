@@ -1,239 +1,318 @@
-# Campaign Multivariate Regression
+# Campaign Analytics Platform
 
-A full-stack application for analyzing marketing campaign performance using multivariate linear regression. Upload campaign data, train predictive models, and forecast conversions for new campaigns.
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?style=flat&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4-F7931E?style=flat&logo=scikit-learn&logoColor=white)](https://scikit-learn.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Features
+A full-stack machine learning platform for marketing campaign performance analysis. Upload campaign data, train predictive regression models, detect multicollinearity issues, and forecast conversions with confidence intervals.
 
-- **Data Upload**: CSV file upload with validation and preview
-- **Data Quality**: Automatic validation, outlier detection, missing value handling
-- **ML Training**: Linear regression with cross-validation and VIF analysis
-- **Predictions**: Single and batch predictions with confidence intervals
-- **Dashboard**: Interactive visualizations of model performance and feature importance
+## Overview
+
+This platform enables marketing teams and data analysts to:
+
+- **Predict Campaign Performance** - Estimate conversions before launching campaigns
+- **Identify Key Drivers** - Understand which features impact performance most
+- **Detect Data Issues** - Automatic multicollinearity detection via VIF analysis
+- **Make Data-Driven Decisions** - Cross-validated metrics ensure reliable predictions
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Frontend (Next.js 14)                       │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐    │
+│  │  Upload  │  │  Train   │  │ Predict  │  │     Results      │    │
+│  │   Page   │  │   Page   │  │   Page   │  │    Dashboard     │    │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘    │
+└───────┼─────────────┼─────────────┼─────────────────┼───────────────┘
+        │             │             │                 │
+        ▼             ▼             ▼                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                       REST API (FastAPI)                            │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐    │
+│  │ /upload  │  │  /train  │  │ /predict │  │    /results      │    │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘    │
+└───────┼─────────────┼─────────────┼─────────────────┼───────────────┘
+        │             │             │                 │
+        ▼             ▼             ▼                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     ML Engine (scikit-learn)                        │
+│  ┌────────────────┐  ┌─────────────────┐  ┌────────────────────┐   │
+│  │ Preprocessing  │  │ Linear Regressor│  │  VIF Analysis      │   │
+│  │ & Encoding     │  │ + Cross-Val     │  │  & Diagnostics     │   │
+│  └────────────────┘  └─────────────────┘  └────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **CSV Upload** | Drag-and-drop interface with schema validation and data preview |
+| **Data Quality Checks** | Automatic outlier detection, missing value handling, type inference |
+| **Model Training** | Multivariate linear regression with k-fold cross-validation |
+| **VIF Analysis** | Variance Inflation Factor calculation to detect multicollinearity |
+| **Predictions** | Single and batch predictions with 95% confidence intervals |
+| **Visualizations** | Feature importance charts, residual plots, actual vs predicted |
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS, Recharts |
-| Backend | FastAPI, Python 3.10+, Pydantic v2, Uvicorn |
-| ML | Scikit-learn, Pandas, NumPy, Statsmodels |
+### Backend
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| FastAPI | 0.109+ | REST API framework |
+| Pydantic | 2.5+ | Data validation & serialization |
+| scikit-learn | 1.4+ | Machine learning models |
+| Pandas | 2.1+ | Data manipulation |
+| NumPy | 1.26+ | Numerical computing |
+| Statsmodels | - | VIF calculation |
+| Uvicorn | 0.27+ | ASGI server |
 
-## Prerequisites
+### Frontend
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 14.2 | React framework (App Router) |
+| React | 18.3 | UI library |
+| TypeScript | 5.4 | Type safety |
+| Tailwind CSS | 3.4 | Styling |
+| Recharts | 2.12 | Data visualization |
+| React Dropzone | 14.2 | File upload handling |
 
-- Python 3.10 or higher
-- Node.js 18 or higher
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10+
+- Node.js 18+
 - npm or yarn
 
-## Installation
+### Installation
 
-### 1. Clone the repository
+**1. Clone the repository**
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/zleypner/multivariate-linear-regression.git
 cd multivariate-linear-regression
 ```
 
-### 2. Backend Setup
+**2. Set up the backend**
 
 ```bash
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv venv
-
-# Activate virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-.\venv\Scripts\activate
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
 
 # Install dependencies
 pip install -r backend/requirements.txt
 pip install -r ml/requirements.txt
 ```
 
-### 3. Frontend Setup
+**3. Set up the frontend**
 
 ```bash
 cd frontend
 npm install
 ```
 
-## Running the Application
+### Running the Application
 
-### Start the Backend
-
+**Start the backend** (from project root):
 ```bash
-# From the project root, with venv activated
 cd backend
 uvicorn app.main:app --reload --port 8000
 ```
 
-The API will be available at `http://localhost:8000`
-
-- API Documentation: `http://localhost:8000/docs`
-- Health Check: `http://localhost:8000/health`
-
-### Start the Frontend
-
+**Start the frontend** (in a new terminal):
 ```bash
-# In a new terminal
 cd frontend
 npm run dev
 ```
 
-The dashboard will be available at `http://localhost:3000`
+Access the application:
+- **Dashboard**: http://localhost:3000
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
 
-## Usage
+## Usage Guide
 
-### 1. Upload Data
+### 1. Upload Campaign Data
 
-Navigate to `/upload` and drag-drop a CSV file with campaign data.
+Navigate to `/upload` and upload a CSV file with the following schema:
 
-**Required columns:**
-- `campaign_id` - Unique identifier
-- `budget` - Campaign budget in dollars
-- `audience_type` - One of: lookalike, interest, retargeting, broad
-- `creative_type` - One of: video, image, carousel
-- `channel` - One of: facebook, instagram, tiktok, google, youtube
-- `impressions` - Total ad impressions
-- `clicks` - Total clicks
-- `ctr` - Click-through rate (%)
-- `cpc` - Cost per click
-- `conversions` - Number of conversions (target variable)
-- `cpl` - Cost per lead
-- `revenue` - Total revenue
-- `roas` - Return on ad spend
+| Column | Type | Description |
+|--------|------|-------------|
+| `campaign_id` | string | Unique identifier |
+| `budget` | number | Campaign budget ($) |
+| `audience_type` | enum | `lookalike`, `interest`, `retargeting`, `broad` |
+| `creative_type` | enum | `video`, `image`, `carousel` |
+| `channel` | enum | `facebook`, `instagram`, `tiktok`, `google`, `youtube` |
+| `impressions` | number | Total ad impressions |
+| `clicks` | number | Total clicks |
+| `ctr` | number | Click-through rate (%) |
+| `cpc` | number | Cost per click ($) |
+| `conversions` | number | Number of conversions (target) |
+| `cpl` | number | Cost per lead ($) |
+| `revenue` | number | Total revenue ($) |
+| `roas` | number | Return on ad spend |
 
-A sample file is available at `data/sample_campaigns.csv`.
+A sample dataset is available at `data/sample_campaigns.csv`.
 
-### 2. Train Model
+### 2. Train the Model
 
 Navigate to `/train`:
-1. Select the target variable (default: conversions)
+1. Select target variable (default: `conversions`)
 2. Choose features to include
-3. Configure training settings (optional)
-4. Click "Train Model"
+3. Configure cross-validation folds (default: 5)
+4. Click **Train Model**
 
 ### 3. Make Predictions
 
 Navigate to `/predict`:
-1. Fill in campaign parameters
-2. Click "Predict"
-3. View predicted conversions with confidence interval
+- **Single Prediction**: Enter campaign parameters manually
+- **Batch Prediction**: Upload a CSV file for bulk predictions
 
-### 4. View Results
+### 4. Analyze Results
 
-Navigate to `/results` to see:
-- Model metrics (R², RMSE, MAE)
-- Feature importance chart
+Navigate to `/results` to view:
+- Model performance metrics (R², RMSE, MAE)
+- Cross-validation scores
+- Feature importance ranking
 - Actual vs Predicted scatter plot
-- Residuals analysis
+- Residual distribution analysis
+- VIF multicollinearity report
 
-## API Endpoints
+## API Reference
+
+### Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/health` | Health check |
-| POST | `/api/upload` | Upload CSV file |
-| GET | `/api/files` | List uploaded files |
-| DELETE | `/api/files/{id}` | Delete file |
-| POST | `/api/train` | Train model |
-| GET | `/api/train/runs` | List training runs |
-| POST | `/api/predict` | Batch prediction |
-| POST | `/api/predict/single` | Single prediction |
-| GET | `/api/results` | Get latest results |
-| GET | `/api/results/coefficients` | Model coefficients |
-| GET | `/api/results/feature-importance` | Feature importance |
-| GET | `/api/results/vif` | VIF report (multicollinearity) |
+| `GET` | `/health` | Health check |
+| `POST` | `/api/upload` | Upload CSV file |
+| `GET` | `/api/files` | List uploaded files |
+| `DELETE` | `/api/files/{id}` | Delete a file |
+| `POST` | `/api/train` | Train regression model |
+| `GET` | `/api/train/runs` | List training runs |
+| `POST` | `/api/predict` | Batch predictions |
+| `POST` | `/api/predict/single` | Single prediction |
+| `GET` | `/api/results` | Get latest results |
+| `GET` | `/api/results/coefficients` | Model coefficients |
+| `GET` | `/api/results/feature-importance` | Feature importance |
+| `GET` | `/api/results/vif` | VIF multicollinearity report |
 
-Full API documentation available at `/docs` when the backend is running.
+### Example: Single Prediction
+
+```bash
+curl -X POST http://localhost:8000/api/predict/single \
+  -H "Content-Type: application/json" \
+  -d '{
+    "budget": 5000,
+    "impressions": 150000,
+    "clicks": 4500,
+    "ctr": 3.0,
+    "cpc": 1.11,
+    "audience_type": "lookalike",
+    "creative_type": "video",
+    "channel": "facebook"
+  }'
+```
+
+**Response:**
+```json
+{
+  "prediction": 127.5,
+  "confidence_interval": {
+    "lower": 98.2,
+    "upper": 156.8
+  }
+}
+```
 
 ## Project Structure
 
 ```
 multivariate-linear-regression/
-├── backend/                 # FastAPI application
+├── backend/                    # FastAPI application
 │   ├── app/
-│   │   ├── main.py         # App entry point
-│   │   ├── config.py       # Configuration
-│   │   ├── middleware/     # Error handling
-│   │   ├── models/         # Pydantic schemas
-│   │   ├── routes/         # API endpoints
-│   │   └── services/       # Business logic
+│   │   ├── main.py            # Application entry point
+│   │   ├── config.py          # Configuration settings
+│   │   ├── middleware/        # Error handling, CORS
+│   │   ├── models/            # Pydantic schemas
+│   │   ├── routes/            # API endpoint handlers
+│   │   └── services/          # Business logic layer
 │   └── requirements.txt
-├── frontend/                # Next.js application
+│
+├── frontend/                   # Next.js application
 │   ├── src/
-│   │   ├── app/            # Pages (App Router)
-│   │   ├── components/     # React components
-│   │   ├── context/        # State management
-│   │   └── lib/            # API client, types
-│   └── package.json
-├── ml/                      # ML modules
-│   ├── model.py            # Regression model
-│   ├── preprocessing.py    # Data preprocessing
-│   ├── pipeline.py         # Data pipeline
-│   ├── feature_engineering.py
-│   ├── data_quality.py
-│   └── requirements.txt
-├── data/                    # Sample data
+│   │   ├── app/               # Pages (App Router)
+│   │   ├── components/        # Reusable UI components
+│   │   ├── context/           # React context providers
+│   │   └── lib/               # API client, utilities
+│   ├── package.json
+│   └── tailwind.config.ts
+│
+├── ml/                         # Machine learning module
+│   ├── model.py               # CampaignRegressionModel class
+│   ├── preprocessing.py       # Data preprocessor
+│   ├── feature_engineering.py # Feature transformations
+│   ├── data_quality.py        # Validation utilities
+│   └── utils.py               # Helper functions
+│
+├── data/                       # Sample datasets
 │   ├── sample_campaigns.csv
 │   └── schema.json
-└── docs/                    # Documentation
+│
+└── docs/                       # Documentation
     └── implementation-tracker.md
 ```
 
-## Development
+## Configuration
 
-### Running Tests
+### Environment Variables
 
-```bash
-# Backend tests (when available)
-cd backend
-pytest
-
-# Frontend tests (when available)
-cd frontend
-npm test
-```
-
-### Code Style
-
-- Python: Follow PEP 8
-- TypeScript: ESLint with Next.js config
-
-## Environment Variables
-
-### Frontend (`frontend/.env.local`)
-
+**Frontend** (`frontend/.env.local`):
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000/api
 ```
 
-### Backend
-
-Configure via environment variables or `backend/app/config.py`:
+**Backend** (environment or `backend/app/config.py`):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `APP_NAME` | Campaign Analytics API | Application name |
-| `DEBUG` | false | Debug mode |
-| `CORS_ORIGINS` | ["http://localhost:3000"] | Allowed origins |
-| `MAX_UPLOAD_SIZE` | 10485760 | Max file size (10MB) |
+| `DEBUG` | false | Enable debug mode |
+| `CORS_ORIGINS` | ["http://localhost:3000"] | Allowed CORS origins |
+| `MAX_UPLOAD_SIZE` | 10485760 | Max upload size (10MB) |
 
-## Known Limitations
+## Model Details
 
-- Data is stored in memory (lost on server restart)
-- No authentication (API is open)
-- No rate limiting
-- Training is synchronous (may timeout for large datasets)
+The platform uses **Ordinary Least Squares (OLS) Linear Regression** with the following characteristics:
 
-## Documentation
+- **Feature Encoding**: One-hot encoding for categorical variables
+- **Feature Scaling**: StandardScaler for numeric features
+- **Validation**: K-fold cross-validation (default: 5 folds)
+- **Multicollinearity Detection**: VIF > 10 flagged as problematic
+- **Confidence Intervals**: Based on RMSE (95% interval)
 
-See `docs/implementation-tracker.md` for:
-- Detailed architecture overview
-- Gap analysis
-- Development roadmap
-- Technical decisions
+### Evaluation Metrics
+
+| Metric | Description |
+|--------|-------------|
+| R² | Coefficient of determination |
+| Adjusted R² | R² adjusted for number of predictors |
+| RMSE | Root Mean Square Error |
+| MAE | Mean Absolute Error |
+| CV R² | Cross-validated R² (mean ± std) |
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<p align="center">
+  Built with FastAPI, Next.js, and scikit-learn
+</p>
